@@ -1,0 +1,150 @@
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ingolf Online Backgammon 2.1</title><script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script><style>
+*{box-sizing:border-box}body{background:#10261c;color:#f8f2df;font:16px system-ui;margin:0}main{max-width:1150px;margin:auto;padding:14px}h1{color:#f7d477}.panel{background:#244333;border-radius:15px;padding:16px;margin:10px 0}button,input,select{font:inherit;border:0;border-radius:9px;padding:10px;margin:4px}button{background:#f3cd6e;color:#152b20;font-weight:700;cursor:pointer}button:disabled{opacity:.45}input,select{background:#fff;color:#14251d}.hidden{display:none!important}#layout{display:grid;grid-template-columns:minmax(0,760px) 1fr;gap:14px}#board{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));grid-template-rows:repeat(2,230px);background:#b88653;border:10px solid #6d4128;border-radius:10px;gap:0;overflow:hidden}.point{position:relative;display:flex;align-items:center;flex-direction:column;cursor:pointer;min-width:0;padding:3px 1px}.point.bottom{justify-content:flex-end;flex-direction:column}.point:before{content:"";position:absolute;top:0;left:0;width:100%;height:79%;background:#6e3429;clip-path:polygon(0 0,100% 0,50% 100%)}.point.bottom:before{top:auto;bottom:0;clip-path:polygon(50% 0,100% 100%,0 100%)}.point.light:before{background:#ebc18c}.point.dark:before{background:#6e3429}.point.sel{background:#f7d66988;outline:3px solid #ffe15b;outline-offset:-3px}.point.possible{box-shadow:inset 0 0 0 5px #3cbd6a;filter:brightness(1.18)}.point .num{position:absolute;bottom:1px;font-size:11px;color:#28170f;font-weight:900;z-index:3}.point.bottom .num{bottom:auto;top:1px}.checker{width:min(93%,39px);aspect-ratio:1;border-radius:50%;border:2px solid #39291f;box-shadow:0 2px 3px #0008;z-index:2;display:grid;place-items:center;font-size:11px;font-weight:800;flex-shrink:0}.checker.w{background:#f8efdb;color:#29221b}.checker.b{background:#252b31;color:#fff;border-color:#eee}.bar{background:#6c442c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#fff}.bar strong{font-size:17px}#status{padding:12px;background:#f3cd6e;color:#193020;border-radius:10px;font-weight:900;font-size:20px}#dice{font-size:64px;line-height:1.25;margin:12px 0;letter-spacing:8px;min-height:78px}#log{max-height:330px;overflow:auto;white-space:pre-line;line-height:1.7;font-size:14px}.winner{animation:blink .8s infinite alternate}@keyframes blink{from{background:#ffe55c;color:#1e321d}to{background:#1ea76d;color:white}}@media(max-width:850px){#layout{grid-template-columns:1fr}#board{grid-template-rows:repeat(2,clamp(145px,30vw,230px));border-width:5px}.checker{width:min(94%,31px)}.point .num{font-size:9px}}
+#board{position:relative;overflow:visible}.bot-from{outline:5px solid #ffe45b;outline-offset:-5px;filter:brightness(1.25)}.bot-to{outline:5px solid #5be5ff;outline-offset:-5px;filter:brightness(1.25)}.moving-checker{position:fixed;z-index:9999;pointer-events:none;transition:transform 1.05s ease-in-out;box-shadow:0 8px 16px #0009!important}.bot-message{background:#f9dd76;color:#15291d;font-weight:900;border-radius:9px;padding:9px;margin:8px 0}#status.bot-moving{background:#e2f4ad}#noMove{background:#a71919;color:#fff;border:4px solid #ffdd55;border-radius:12px;padding:18px 12px;font-size:23px;font-weight:950;text-align:center;box-shadow:0 0 20px #ffde6599;animation:noMovePulse .65s infinite alternate;margin:12px 0}@keyframes noMovePulse{from{filter:brightness(1)}to{filter:brightness(1.35)}}
+#winOverlay{position:fixed;inset:0;background:#07160ddc;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px}
+#winDialog{background:linear-gradient(150deg,#fff4c8,#f1c968);color:#183121;border:5px solid #b8872c;border-radius:22px;padding:34px 28px;max-width:460px;width:100%;text-align:center;box-shadow:0 25px 90px #000a;animation:winAppear .35s ease-out}
+#winDialog h2{font-size:clamp(30px,7vw,48px);margin:8px 0}#winDialog p{font-size:22px;font-weight:750}#winDialog button{background:#214b32;color:white;padding:14px 24px;font-size:19px}
+@keyframes winAppear{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
+</style></head><body><main><h1>🎲 Ingolf Online Backgammon <small>2.1</small></h1><section id="lobby" class="panel"><p>Spela mot 🤖 <b>Karlsson</b>, en vän på samma skärm eller en vän online via rumskod.</p><label>Ditt namn <input id="name" maxlength="20" placeholder="Du"></label><label>Motståndare <select id="mode"><option value="bot">🤖 Karlsson</option><option value="local">👥 Vän på samma skärm</option><option value="host">🌐 Vän online</option></select></label><button id="create">Starta / Skapa rum</button><p>Har du fått en rumskod?</p><input id="code" placeholder="Rumskod"><button id="join">Anslut till vän</button><p id="connect"></p><div id="waiting" class="hidden"><strong id="room"></strong><p>Dela rumskoden med din vän.</p><button id="start" disabled>Starta spelet</button></div></section><section id="game" class="hidden"><div id="layout"><div class="panel"><div id="board"></div><p>Vita brickor går från 24 mot 1. Svarta går från 1 mot 24. Klicka på en egen bricka och sedan på målspetsen. För att ta ut brickor, klicka på ”Ut”.</p></div><div class="panel"><div id="status"></div><h3 id="players"></h3><div id="dice"></div><div id="noMove" class="hidden" role="alert" aria-live="assertive"></div><div id="botMove" class="bot-message hidden" aria-live="polite"></div><button id="roll">🎲 Kasta tärningarna</button><button id="pass">Avsluta tur</button><p id="info"></p><div id="off"></div><button id="restart">Nytt parti</button><h3>Logg</h3><div id="log"></div></div></div></section></main><div id="winOverlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="winTitle"><div id="winDialog"><div style="font-size:64px">🏆🎉</div><h2 id="winTitle">DU VINNER!</h2><p id="winText"></p><button id="winClose">Stäng</button><button id="winAgain">Spela igen</button></div></div><script>
+(()=>{'use strict';const $=x=>document.getElementById(x);let winShown=false;let mode='',peer,conn,state=null,selected=null,logs=[],busy=false,white='Du',black='Karlsson',timer=null,noMoveNotice='',noMoveTimer=null;
+const rand=()=>1+Math.floor(Math.random()*6),say=x=>$('connect').textContent=x,owner=()=>mode==='local'||(mode==='bot'&&state.turn==='w')||(mode==='host'&&state.turn==='w')||(mode==='guest'&&state.turn==='b');
+function init(){winShown=false;$('winOverlay').classList.add('hidden');noMoveNotice='';clearTimeout(noMoveTimer);let p=Array(24).fill(0);p[23]=2;p[12]=5;p[7]=3;p[5]=5;p[0]=-2;p[11]=-5;p[16]=-3;p[18]=-5;state={p,bar:{w:0,b:0},off:{w:0,b:0},turn:'w',dice:[],rolled:false,winner:null};selected=null;logs=[];busy=false;$('botMove').classList.add('hidden');$('lobby').classList.add('hidden');$('game').classList.remove('hidden');log('Partiet börjar. Vit spelar först.');render();bot()}
+function log(t){logs.unshift(t);logs=logs.slice(0,35)}function sign(c){return c==='w'?1:-1}function count(i,c){return i==='bar'?state.bar[c]:i==='off'?state.off[c]:Math.max(0,state.p[i]*sign(c))}function own(i,c){return count(i,c)>0}function destination(from,d,c){return from==='bar'?(c==='w'?24-d:d-1):from+(c==='w'?-d:d)}function home(c){return c==='w'?[0,5]:[18,23]}function allHome(c){if(state.bar[c])return false;return state.p.every((v,i)=>v*sign(c)<=0||(i>=home(c)[0]&&i<=home(c)[1]))}
+function legal(c=state.turn){if(!state.dice.length)return[];let moves=[],sources=state.bar[c]?['bar']:state.p.map((_,i)=>i).filter(i=>own(i,c));for(const from of sources)for(let j=0;j<state.dice.length;j++){let d=state.dice[j],to=destination(from,d,c);if(to>=0&&to<24){if(state.p[to]*sign(c)>=-1)moves.push({from,to,di:j,d})}else if(from!=='bar'&&allHome(c)){const exact=c==='w'?from+1:24-from;if(d===exact||(d>exact&&!state.p.some((v,i)=>v*sign(c)>0&&(c==='w'?i>from:i<from))))moves.push({from,to:'off',di:j,d})}}return moves}
+function valid(){const m=legal();if(!m.length)return[];const max=Math.max(...m.map(x=>x.d));if(state.dice.length===2&&state.dice[0]!==state.dice[1]){let usable=new Set(m.map(x=>x.d));if(usable.size===2){let twoStep=false;for(const x of m){let saved=JSON.stringify(state),savedSelection=selected;apply(x,false);if(legal().length)twoStep=true;state=JSON.parse(saved);selected=savedSelection;if(twoStep)break}if(!twoStep)return m.filter(x=>x.d===max)}}return m}
+function apply(m,write=true){const c=state.turn,s=sign(c),enemy=c==='w'?'b':'w';if(m.from==='bar')state.bar[c]--;else state.p[m.from]-=s;if(m.to==='off')state.off[c]++;else{if(state.p[m.to]===-s){state.bar[enemy]++;state.p[m.to]=0}state.p[m.to]+=s}state.dice.splice(m.di,1);if(write)log((c==='w'?'Vit':'Svart')+': '+(m.from==='bar'?'Bar':m.from+1)+' → '+(m.to==='off'?'Ut':m.to+1)+' ('+m.d+')');if(state.off[c]===15){state.winner=c;log('🏆 '+(c==='w'?white:black)+' vinner!')}selected=null}
+function end(){if(state.winner)return;state.dice=[];state.rolled=false;state.turn=state.turn==='w'?'b':'w';selected=null;log('Tur: '+(state.turn==='w'?white:black));render();sync();bot()}
+function move(m){apply(m);render();sync();if(state.winner)return;if(!valid().length)end();else bot()}
+function showNoMove(){const name=state.turn==='b'?black:white;noMoveNotice='⛔ '+name.toUpperCase()+' KAN INTE FLYTTA! ⛔';render();clearTimeout(noMoveTimer);noMoveTimer=setTimeout(()=>{noMoveNotice='';render()},5500)}
+function roll(){if(!state||state.rolled||state.winner||!owner()||busy)return;let a=rand(),b=rand();state.dice=a===b?[a,a,a,a]:[a,b];state.rolled=true;log((state.turn==='w'?'Vit':'Svart')+' kastade '+a+' och '+b);render();sync();if(!valid().length){showNoMove();setTimeout(()=>{if(state&&state.rolled&&!valid().length)end()},3000);}else bot()}
+function click(i){if(!state||!state.rolled||!owner()||busy||state.winner)return;let c=state.turn;if(selected!==null){const m=valid().filter(x=>x.from===selected&&x.to===i);if(m.length){move(m[0]);return}}if(own(i,c)){selected=i;render();return}selected=null;render()}
+function drawPoint(i,bottom){const v=state.p[i],c=v>0?'w':'b',n=Math.abs(v),el=document.createElement('div');el.dataset.point=i;el.className='point '+(i%2===0?'light ':'dark ')+(bottom?'bottom':'')+(selected===i?' sel':'')+(selected!==null&&valid().some(m=>m.from===selected&&m.to===i)?' possible':'');el.onclick=()=>click(i);let number=document.createElement('span');number.className='num';number.textContent=i+1;el.append(number);for(let k=0;k<Math.min(n,5);k++){let ch=document.createElement('div');ch.className='checker '+c;ch.textContent=k===4&&n>5?'×'+n:'';el.append(ch)}return el}
+function drawBar(top){let el=document.createElement('div');el.className='bar';let c=top?'b':'w';el.innerHTML='<span>BAR</span><strong>'+(state.bar[c]||'–')+'</strong><span>'+(c==='w'?'Vit':'Svart')+'</span>';if(state.bar[c]){let ch=document.createElement('div');ch.className='checker '+c;el.append(ch)}if(state.turn===c&&state.bar[c]>0){el.onclick=()=>{selected='bar';render()};if(selected==='bar')el.classList.add('sel')}return el}
+function render(){if(!state)return;const board=$('board');board.innerHTML='';for(let i=12;i<24;i++){if(i===18)board.append(drawBar(true));board.append(drawPoint(i,false))}for(let i=11;i>=0;i--){if(i===5)board.append(drawBar(false));board.append(drawPoint(i,true))}const c=state.turn,name=c==='w'?white:black;$('status').textContent=state.winner?'🏆 '+(state.winner==='w'?white:black)+' VINNER!':(busy?'🤖 Karlsson funderar…':'Tur: '+name+' ('+(c==='w'?'Vit':'Svart')+')');$('status').classList.toggle('winner',!!state.winner);$('players').textContent='⚪ '+white+' ('+state.off.w+'/15 ute) – ⚫ '+black+' ('+state.off.b+'/15 ute)';$('noMove').textContent=noMoveNotice;$('noMove').classList.toggle('hidden',!noMoveNotice);$('dice').textContent=state.dice.map(d=>['','⚀','⚁','⚂','⚃','⚄','⚅'][d]).join(' ')||(state.rolled?'Inga kast kvar':'Kasta tärningarna');$('roll').disabled=!owner()||state.rolled||busy||!!state.winner;$('pass').disabled=!owner()||!state.rolled||valid().length>0||!!state.winner;$('info').textContent=state.bar[c]?'Du måste flytta brickorna från BAR först.':state.rolled?(selected!==null?'Välj en grönmarkerad målspets. Kvarvarande kast: '+state.dice.join(', '):'Välj en av dina brickor. Kvarvarande kast: '+state.dice.join(', ')):'Kasta för att börja turen.';$('off').innerHTML='';let off=document.createElement('button');off.textContent='📤 Ut ('+state.off[c]+'/15)';off.disabled=!owner()||selected===null||!valid().some(m=>m.from===selected&&m.to==='off');off.onclick=()=>{const m=valid().find(m=>m.from===selected&&m.to==='off');if(m)move(m)};$('off').append(off);$('log').textContent=logs.join('\n');$('undo')?.remove();if(state.winner&&!winShown){winShown=true;const winnerName=state.winner==='w'?white:black;const iWon=mode==='bot'?state.winner==='w':mode==='guest'?state.winner==='b':mode==='host'?state.winner==='w':null;$('winTitle').textContent=iWon===true?'🎉 DU VINNER!':iWon===false?'🏆 '+winnerName+' VINNER!':'🏆 '+winnerName+' VINNER!';$('winText').textContent=winnerName+' har fått ut alla 15 brickor!';$('winOverlay').classList.remove('hidden')}}
+function sync(){if(mode==='host'&&conn?.open)conn.send({t:'state',state,logs,white,black});if(mode==='guest'&&conn?.open)conn.send({t:'state',state,logs,white,black})}
+function botAnimate(m){
+  return new Promise(resolve=>{
+    const board=$('board');
+    const from=m.from==='bar'?board.querySelector('.bar:first-of-type'):board.querySelector('[data-point="'+m.from+'"]');
+    const to=m.to==='off'?$('off'):board.querySelector('[data-point="'+m.to+'"]');
+    const fromLabel=m.from==='bar'?'BAR':m.from+1;
+    const toLabel=m.to==='off'?'UT':m.to+1;
+    const notice=$('botMove');notice.textContent='🤖 Karlsson flyttar svart bricka: '+fromLabel+' → '+toLabel+' (tärning '+m.d+')';notice.classList.remove('hidden');
+    $('status').classList.add('bot-moving');
+    from?.classList.add('bot-from');to?.classList.add('bot-to');
+    // Show the chosen move for one second before the checker starts moving.
+    setTimeout(()=>{
+      const source=from?.querySelector('.checker.b');
+      const a=(source||from)?.getBoundingClientRect(),b=to?.getBoundingClientRect();
+      if(!a||!b){resolve();return}
+      const ghost=document.createElement('div');ghost.className='checker b moving-checker';
+      ghost.style.cssText='left:'+a.left+'px;top:'+a.top+'px;width:'+Math.min(a.width,39)+'px;height:'+Math.min(a.width,39)+'px;';
+      document.body.appendChild(ghost);
+      const tx=b.left+b.width/2-a.left-Math.min(a.width,39)/2;
+      const ty=b.top+b.height/2-a.top-Math.min(a.width,39)/2;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ghost.style.transform='translate('+tx+'px,'+ty+'px)'}));
+      setTimeout(()=>{ghost.remove();resolve()},1150);
+    },1000);
+  });
+}
+function bot(){
+  clearTimeout(timer);
+  if(mode!=='bot'||!state||state.turn!=='b'||state.winner)return;
+  if(!state.rolled){rollBot();return}
+  busy=true;render();
+  $('botMove').textContent='🤖 Karlsson har kastat tärningarna. Väntar 3 sekunder innan flytten…';
+  $('botMove').classList.remove('hidden');
+  timer=setTimeout(async()=>{
+    if(!state||mode!=='bot'||state.turn!=='b')return;
+    const moves=valid();if(!moves.length){busy=false;showNoMove();setTimeout(()=>{if(state&&state.turn==='b')end()},3000);return}
+    // Karlsson prioriterar skyddade punkter med minst två brickor och undviker ensamma brickor.
+    const evaluateBotMove=m=>{
+      const before=state.p.slice(),oldBar={...state.bar},oldOff={...state.off},oldDice=state.dice.slice(),oldSelected=selected,oldWinner=state.winner;
+      const targetBefore=m.to==='off'?0:before[m.to];
+      apply(m,false);
+      let score=0;
+      // Att slå en ensam motståndarbricka är bra, men inte på bekostnad av stor egen risk.
+      if(m.to!=='off'&&targetBefore===1)score+=38;
+      if(m.to==='off')score+=110;
+      if(m.from==='bar')score+=35;
+      if(m.to!=='off'&&before[m.to]===-1)score+=52; // gör en säker punkt med två egna
+      if(m.to!=='off'&&state.p[m.to]<=-2)score+=14;
+      if(m.from!=='bar'&&before[m.from]===-2)score-=42; // lämnar en oskyddad bricka
+      if(m.to!=='off'&&state.p[m.to]===-1)score-=32; // ensam på nya positionen
+      // Bedöm hur lätt vit kan slå ensamma svarta brickor på nästa tur.
+      for(let i=0;i<24;i++)if(state.p[i]===-1){
+        let danger=0;
+        for(let d=1;d<=6;d++){
+          const origin=i+d;
+          if(origin<24&&state.p[origin]>0)danger++;
+        }
+        score-=danger*11;
+      }
+      // Eget bo för svart är positionerna 19–24 (index 18–23).
+      // Belöna par på varje spets och undvik att splittra par i boet.
+      // Prioritera fortfarande att plocka ut brickor när det är möjligt.
+      const homePairValue=n=>n>=2?48:0;
+      for(let i=18;i<24;i++){
+        const oldCount=Math.max(0,-before[i]);
+        const newCount=Math.max(0,-state.p[i]);
+        score+=homePairValue(newCount)-homePairValue(oldCount);
+        if(oldCount===0&&newCount===1)score-=12;
+        if(oldCount===1&&newCount===0)score+=8;
+        if(oldCount===2&&newCount===1)score-=32;
+      }
+      // Undvik att samla alltför många brickor på samma spets om
+      // andra spetsar i boet ännu saknar ett skyddat par.
+      if(m.to!=='off'&&m.to>=18&&state.p[m.to]<-2){
+        const unprotected=state.p.slice(18,24).some(n=>n===0||n===-1);
+        if(unprotected)score-=Math.min(20,(-state.p[m.to]-2)*7);
+      }
+      // Att föra brickorna mot mål är också viktigt.
+      if(m.from!=='bar'&&m.to!=='off')score+=(m.to-m.from)*0.7;
+      state.p=before;state.bar=oldBar;state.off=oldOff;state.dice=oldDice;selected=oldSelected;state.winner=oldWinner;
+      return score+Math.random()*2;
+    };
+    // Planera hela kastet: belöna att två på varandra följande drag
+    // bildar en skyddad punkt, även när första draget verkar svagare.
+    const planScore=(first)=>{
+      const saved=JSON.stringify(state),savedSelection=selected;
+      const firstScore=evaluateBotMove(first);
+      const originalPoints=state.p.slice();
+      apply(first,false);
+      let bestFollow=0;
+      if(state.dice.length){
+        const next=legal();
+        for(const second of next){
+          const follow=evaluateBotMove(second);
+          const afterFirstState=JSON.stringify(state);
+          apply(second,false);
+          let pairBonus=0;
+          for(let i=18;i<24;i++){
+            const oldCount=Math.max(0,-originalPoints[i]);
+            const newCount=Math.max(0,-state.p[i]);
+            if(oldCount<2&&newCount>=2)pairBonus+=95;
+          }
+          // Belöna även ett nytt par utanför boet.
+          for(let i=0;i<18;i++){
+            const oldCount=Math.max(0,-originalPoints[i]);
+            if(oldCount<2&&state.p[i]<=-2)pairBonus+=40;
+          }
+          bestFollow=Math.max(bestFollow,follow+pairBonus);
+          state=JSON.parse(afterFirstState);
+        }
+      }
+      state=JSON.parse(saved);selected=savedSelection;
+      return firstScore+bestFollow*0.85;
+    };
+    moves.sort((a,b)=>planScore(b)-planScore(a));
+    const m=moves[0];await botAnimate(m);
+    if(!state||mode!=='bot'||state.turn!=='b')return;
+    busy=false;move(m);$('botMove').classList.add('hidden');$('status').classList.remove('bot-moving');
+  },3000);
+}
+function rollBot(){let a=rand(),b=rand();state.dice=a===b?[a,a,a,a]:[a,b];state.rolled=true;log('Svart kastade '+a+' och '+b);render();sync();if(!valid().length){showNoMove();$('botMove').textContent='🤖 Karlsson kan inte flytta och passar.';setTimeout(()=>{if(state&&state.turn==='b')end()},3000)}else bot()}
+$('winClose').onclick=()=>{$('winOverlay').classList.add('hidden')};$('winAgain').onclick=()=>{if(mode==='guest'){alert('Be värden starta ett nytt parti.');return}init();sync()};$('roll').onclick=roll;$('pass').onclick=()=>{if(owner()&&state.rolled&&!valid().length)end()};$('restart').onclick=()=>{if(mode==='guest')return alert('Be värden starta nytt parti.');if(confirm('Starta ett nytt parti?')){init();sync()}};
+$('create').onclick=()=>{white=$('name').value.trim()||'Du';mode=$('mode').value;if(mode==='bot'){black='Karlsson 🤖';init()}else if(mode==='local'){black='Vän';init()}else{if(typeof Peer==='undefined')return say('Onlinebiblioteket kunde inte laddas.');mode='host';let code='ingolf-bg-'+Math.random().toString(36).slice(2,8);peer=new Peer(code);peer.on('open',()=>{say('Rumskod: '+code.slice(10));$('room').textContent='Rumskod: '+code.slice(10);$('waiting').classList.remove('hidden')});peer.on('connection',c=>{if(conn){c.close();return}conn=c;conn.on('open',()=>{$('start').disabled=false;say('Vän ansluten!')});conn.on('data',x=>{if(x.t==='hello')black=x.name||'Vän';if(x.t==='state'&&state?.turn==='b'){state=x.state;logs=x.logs;render()}})});peer.on('error',e=>say(e.message))}};
+$('join').onclick=()=>{let code=$('code').value.trim().toLowerCase().replace('ingolf-bg-','');if(!code)return say('Ange rumskoden.');if(typeof Peer==='undefined')return say('Onlinebiblioteket kunde inte laddas.');mode='guest';black=$('name').value.trim()||'Du';peer=new Peer();peer.on('open',()=>{conn=peer.connect('ingolf-bg-'+code,{reliable:true});conn.on('open',()=>{say('Ansluten. Väntar på start.');conn.send({t:'hello',name:black})});conn.on('data',x=>{if(x.t==='start'){white=x.white;black=x.black;init()}else if(x.t==='state'){state=x.state;logs=x.logs;white=x.white;black=x.black;render()}})});peer.on('error',e=>say(e.message))};
+$('start').onclick=()=>{if(mode==='host'&&conn?.open){init();conn.send({t:'start',white,black});sync()}};
+})();
+</script></body></html>
